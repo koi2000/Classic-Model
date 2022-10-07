@@ -14,6 +14,7 @@ class WordEmbeddingDataSet(tud.Dataset):
         self.K = K
         # 存储每一个单词的index
         self.text_encoded = [word2idx.get(word, word2idx['<UNK>']) for word in text]
+        # self.text_encoded = [word2idx.get(word) for word in text]
         self.text_encoded = torch.LongTensor(self.text_encoded)
         self.word2idx = word2idx
         self.idx2word = idx2word

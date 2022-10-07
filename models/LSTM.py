@@ -55,5 +55,5 @@ class myLSTM(nn.Module):
 
 if __name__ == '__main__':
     net = myLSTM(10,20)
-    print(net..)
+    print(net)
 

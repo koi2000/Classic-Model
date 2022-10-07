@@ -18,47 +18,40 @@ from tqdm import tqdm
 from config import Config
 from dataset import WordEmbeddingDataSet
 from model import EmbeddingModel
+from handledata import processPoetry, processWord
+from utils import adjust_learning_rate
 
 random.seed(1)
 np.random.seed(1)
 torch.manual_seed(1)
 # ----超参数-----------------------------------------
 # 窗口大小
-C = 3
+C = Config.C
 # 负采样样本倍数
-K = 15
+K = Config.K
 # 训练轮数
-epochs = 1
-MAX_VOCAB_SIZE = 100000
-EMBEDDING_SIZE = 1000
-batch_size = 32
-lr = 0.2
-momentum = 0.9
+epochs = Config.epochs
+MAX_VOCAB_SIZE = Config.MAX_POETRY_VOCAB_SIZE
+EMBEDDING_SIZE = Config.EMBEDDING_SIZE
+batch_size = Config.batch_size
+lr = Config.lr
+momentum = Config.momentum
 # ---------------------------------------------------
+mp = np.load(Config.npData,allow_pickle=True)
+# text = mp["text"]
+# word2idx = mp["word2idx"]
+# idx2word = mp['idx2word']
+# word_freqs = mp['word_freqs']
+# word_counts = mp['word_counts']
 
-with open(Config.data, encoding='utf-8') as f:
-    text = f.read()  # 得到文本内容
-text = text.replace('，', '')
-text = text.replace('。', '')
-text = list(text)
-
-vocab_dict = dict(Counter(text).most_common(MAX_VOCAB_SIZE - 1))  # 得到单词字典表，key是单词，value是次数
-vocab_dict['<UNK>'] = len(text) - np.sum(list(vocab_dict.values()))  # 把不常用的单词都编码为"<UNK>"
-idx2word = [word for word in vocab_dict.keys()]
-word2idx = {word: i for i, word in enumerate(idx2word)}
-word_counts = np.array([count for count in vocab_dict.values()], dtype=np.float32)
-word_freqs = word_counts / np.sum(word_counts)
-word_freqs = word_freqs ** (3. / 4.)
+text = mp[0]
+word2idx = mp[1]
+idx2word = mp[2]
+word_freqs = mp[3]
+word_counts = mp[4]
 
 dataset = WordEmbeddingDataSet(text, word2idx, idx2word, word_freqs, word_counts, C, K)
 dataloader = tud.DataLoader(dataset, batch_size, shuffle=True)
-
-
-def adjust_learning_rate(optimizer, epoch, start_lr):
-    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-    lr = start_lr * (0.1 ** (epoch // 3))
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
 
 
 def train():
@@ -69,7 +62,12 @@ def train():
     device = Config.device
 
     model = EmbeddingModel(len(word_freqs), EMBEDDING_SIZE)
-    optimizer = optim.SGD(model.parameters(), lr=lr,momentum=momentum)
+
+    # optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
+    # 加载上次使用的模型
+    # weight = torch.load("./checkpoint1/embedding-100000.th")
+    # model.load_state_dict(weight)
     # 转移到相应计算设备上
     model.to(device)
 
@@ -86,10 +84,10 @@ def train():
             optimizer.step()
             if i % 1000 == 0:
                 print('epoch', e, 'iteration', i, loss.item())
-            if i % 50000 == 0:
-                torch.save(model.state_dict(), "./checkpoint/embedding-{}.th".format(i))
+            if i % 10000 == 0:
+                torch.save(model.state_dict(), "./checkpoint2/embedding-{}.th".format(i))
     embedding_weights = model.input_embeddings()
-    torch.save(model.state_dict(), "./checkpoint/embedding-{}.th".format("final"))
+    torch.save(model.state_dict(), "./checkpoint2/embedding-{}.th".format("final"))
 
 
 if __name__ == '__main__':

@@ -4,37 +4,36 @@ from collections import Counter
 
 import scipy
 import torch
+from config import Config
+from model import EmbeddingModel
+from handledata import processPoetry, processWord
 
 # ----超参数-----------------------------------------
 # 窗口大小
-
-from models.word2vec.model import EmbeddingModel
-
-C = 3
+C = Config.C
 # 负采样样本倍数
-K = 15
+K = Config.K
 # 训练轮数
-epochs = 1
-MAX_VOCAB_SIZE = 10000
-EMBEDDING_SIZE = 100
-batch_size = 32
-lr = 0.2
-momentum = 0.9
+epochs = Config.epochs
+MAX_VOCAB_SIZE = Config.MAX_WORD_VOCAB_SIZE
+EMBEDDING_SIZE = Config.EMBEDDING_SIZE
+batch_size = Config.batch_size
+lr = Config.lr
+momentum = Config.momentum
 # ---------------------------------------------------
 
-with open('宋_4.txt', encoding='utf-8') as f:
-    text = f.read()  # 得到文本内容
-text = text.replace('，', '')
-text = text.replace('。', '')
-text = list(text)
+mp = np.load(Config.npData,allow_pickle=True)
+# text = mp["text"]
+# word2idx = mp["word2idx"]
+# idx2word = mp['idx2word']
+# word_freqs = mp['word_freqs']
+# word_counts = mp['word_counts']
 
-vocab_dict = dict(Counter(text).most_common(MAX_VOCAB_SIZE - 1))  # 得到单词字典表，key是单词，value是次数
-vocab_dict['<UNK>'] = len(text) - np.sum(list(vocab_dict.values()))  # 把不常用的单词都编码为"<UNK>"
-idx2word = [word for word in vocab_dict.keys()]
-word2idx = {word: i for i, word in enumerate(idx2word)}
-word_counts = np.array([count for count in vocab_dict.values()], dtype=np.float32)
-word_freqs = word_counts / np.sum(word_counts)
-word_freqs = word_freqs ** (3. / 4.)
+text = mp[0]
+word2idx = mp[1]
+idx2word = mp[2]
+word_freqs = mp[3]
+word_counts = mp[4]
 
 
 def find_nearest(embedding_weights, word):
@@ -45,12 +44,14 @@ def find_nearest(embedding_weights, word):
 
 
 def test():
-    model = EmbeddingModel(len(word_freqs), 100)
-    weight = torch.load("./checkpoint/embedding-10000.th")
+    model = EmbeddingModel(len(word_freqs), Config.EMBEDDING_SIZE)
+    weight = torch.load("./checkpoint2/embedding-50000.th")
     model.load_state_dict(weight)
     embedding_weights = model.input_embedding()
-    for word in ["田", "地", "人"]:
+    for word in ["喜",'怒',"哀","乐"]:
         print(word, find_nearest(embedding_weights, word))
+    # for word in ["one", 'second',"computer"]:
+    #     print(word, find_nearest(embedding_weights, word))
 
 
 if __name__ == '__main__':
