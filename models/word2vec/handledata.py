@@ -1,6 +1,7 @@
 import pathlib
 from collections import Counter
 
+import re
 import pandas as pd
 import numpy as np
 from wordcloud import WordCloud, ImageColorGenerator  # , STOPWORDS
@@ -16,8 +17,12 @@ from config import Config
 
 def csv2txt(txtPath, df):
     with open(txtPath, 'a', encoding='utf-8') as f:
-        for i in df['内容'].values:
-            f.write(i)
+        for row in df['内容'].values:
+            row = re.split('，|。', row)
+            for sen in row:
+                f.write(sen)
+                if len(sen) > 0:
+                    f.write('\n')
 
 
 def processData():
@@ -40,7 +45,7 @@ def processPoetryWithJiayan():
     hot = df.head(Config.MAX_POETRY_VOCAB_SIZE)
     vocab_dict = dict()
     for row in range(hot.shape[0]):
-        vocab_dict[df.loc[row,'Word']] = df.loc[row,'Frequency']
+        vocab_dict[df.loc[row, 'Word']] = df.loc[row, 'Frequency']
     vocab_dict['<UNK>'] = df['Frequency'].sum() - hot['Frequency'].sum()
 
     idx2word = [word for word in vocab_dict.keys()]
@@ -101,5 +106,5 @@ def processWord():
 
 
 if __name__ == '__main__':
-    # processData()
-    processPoetryWithJiayan()
+    processData()
+    # processPoetryWithJiayan()

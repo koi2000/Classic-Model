@@ -17,9 +17,9 @@ from torch import optim
 class Config(object):
     use_gpu = True
     device = "cpu"
-    poetrydata = "./data/song_4.txt"
+    poetrydata = "./data/song.txt"
     worddata = "./data/text8.train.txt"
-    dataPath = "./data/two.txt"
+    dataPath = "./data/"
     npData = "./data/song.npz.npy"
     # 窗口大小
     C = 3
