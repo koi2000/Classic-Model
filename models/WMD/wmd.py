@@ -34,7 +34,7 @@ with open(r'./data/song.txt', 'r', encoding='utf-8') as f_1:
 
 num_best = 10
 mp = {}
-for sen in documents[:10000]:
+for sen in documents[:500000]:
     distance = model.wv.wmdistance("漫卷诗书喜欲狂", sen)
     mp[sen] = distance
 
